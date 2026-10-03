@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - `demos/tas-lab`, a kind-based lab with eight scenarios that use Topograph labels as KEP-5732 `TopologyConstraint` keys and as Kueue `Topology` levels, run and validated against Kubernetes v1.37 and Kueue v0.20.0. Each scenario states the problem, what it does and how it is validated in `docs/demos/tas-lab.md`; the example Kueue `Topology` manifests for each shape of labels are in `demos/tas-lab/scenarios/08-kueue-topology-shapes/README.md`. The scenarios are declarative Chainsaw tests (`demos/tas-lab/scenarios`), and `demos/tas-lab/setup/chainsaw.sh` installs the pinned Chainsaw CLI.
+- "Install on RKE2 (SUSE)" guide (`docs/get-started/rke2-suse.md`) covering the GPU Operator location for `nvidia-smi` discovery, FQDN node names, Pod Security under RKE2's CIS profile, SELinux on SLES, and RoCE fabrics.
 - `infiniband-sim` provider replays a saved `ibnetdiscover` output file through the production InfiniBand parser, allowing offline switch topology testing with requested-node filtering and no fabric access.
 - SHA-256 checksum files published beside Helm chart packages and included
   with their corresponding GitHub release assets.

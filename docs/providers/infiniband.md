@@ -23,7 +23,7 @@ For **Multi-Node NVLink (MNNVL) Kubernetes clusters** (e.g. GB200 NVL72), do not
 
 All three variants are single-region only (multi-region requests return a `400 Bad Request` error). No CSP credentials are required.
 
-Nodes are matched by the host name in each HCA's node description (for example `node-01 mlx5_0`). When that name and the cluster node name differ only by domain, as when Kubernetes registers nodes by FQDN (`node-01.example.com`) while the HCA reports the short name, the short names (up to the first `.`) are compared instead. A short name shared by more than one cluster node is skipped with a warning; IP-address node names are compared as-is.
+Nodes are matched by the host name in each HCA's node description (for example `node-01 mlx5_0`). When that name and the cluster node name differ only by domain, as when Kubernetes registers nodes by FQDN (`node-01.example.com`) while the HCA reports the short name, the short names (up to the first `.`) are compared instead. This fallback applies only when at least one of the two names is short, so two different FQDNs (`node-01.a.lab` and `node-01.b.lab`) never match. A short name shared by more than one cluster node is skipped with a warning, as is a fallback match for a node that another HCA reports under a different host name; IP-address node names are compared as-is.
 
 ## Output
 

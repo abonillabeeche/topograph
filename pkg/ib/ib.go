@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"maps"
 	"net"
 	"regexp"
 	"slices"
@@ -209,9 +210,16 @@ func extractNodeName(name string) string {
 // resolveNodeNames maps HCA host names to cluster node names.
 // The HCA node description usually carries the short host name, while
 // the cluster may register nodes by their FQDN (e.g. RKE2 on SLES), or
-// the other way round. Names that match exactly are kept; otherwise the
-// short names (up to the first dot) are compared, and a match is used
-// only when it identifies exactly one cluster node.
+// the other way round. Names that match exactly are kept. Otherwise the
+// short names (up to the first dot) are compared, if at least one of the
+// two names is short, and a match is used only when it identifies exactly
+// one cluster node. Two different FQDNs never match.
+//
+// A fallback match is also dropped when another HCA reports a different
+// host name for the same node, either exactly or through its own fallback,
+// so that a node is never placed under the leaf switches of two hosts.
+// Several HCAs reporting the same host name (one host with several HCAs)
+// are kept.
 func resolveNodeNames(hca map[string]string, nodesInCluster map[string]bool) map[string]string {
 	byShortName := make(map[string][]string)
 	for node := range nodesInCluster {
@@ -220,21 +228,52 @@ func resolveNodeNames(hca map[string]string, nodesInCluster map[string]bool) map
 	}
 
 	resolved := make(map[string]string, len(hca))
+	// cluster node -> host names reported by the HCAs that resolved to it
+	reported := make(map[string]map[string]bool)
+	fallback := make(map[string]string) // HCA ID -> cluster node
 	for id, name := range hca {
 		resolved[id] = name
 		if nodesInCluster[name] {
+			addReported(reported, name, name)
 			continue
 		}
-		switch candidates := byShortName[shortHostName(name)]; len(candidates) {
+		var candidates []string
+		for _, node := range byShortName[shortHostName(name)] {
+			if isShortHostName(name) || isShortHostName(node) {
+				candidates = append(candidates, node)
+			}
+		}
+		switch len(candidates) {
 		case 0:
 		case 1:
-			resolved[id] = candidates[0]
+			fallback[id] = candidates[0]
+			addReported(reported, candidates[0], name)
 		default:
 			slices.Sort(candidates)
 			klog.Warningf("HCA host name %q matches multiple nodes %v; skipping", name, candidates)
 		}
 	}
+
+	for id, node := range fallback {
+		if names := reported[node]; len(names) > 1 {
+			klog.Warningf("HCA host name %q matches node %q, which other HCAs report as %v; skipping",
+				hca[id], node, slices.Sorted(maps.Keys(names)))
+			continue
+		}
+		resolved[id] = node
+	}
 	return resolved
+}
+
+func addReported(reported map[string]map[string]bool, node, name string) {
+	if reported[node] == nil {
+		reported[node] = make(map[string]bool)
+	}
+	reported[node][name] = true
+}
+
+func isShortHostName(name string) bool {
+	return shortHostName(name) == name
 }
 
 func shortHostName(name string) string {

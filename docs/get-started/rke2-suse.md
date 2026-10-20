@@ -76,7 +76,7 @@ On the validation cluster:
 
 ## RoCE fabrics
 
-`ibnetdiscover` works only on InfiniBand fabrics. On NICs in RoCE (Ethernet) mode it fails with `Can't open SMI UMAD port`, and the `infiniband-k8s` provider returns an empty switch tree. The request still completes, and Topograph leaves any existing topology labels on the nodes unchanged.
+`ibnetdiscover` works only on InfiniBand fabrics. On NICs in RoCE (Ethernet) mode it fails with `Can't open SMI UMAD port`, and the `infiniband-k8s` provider returns an empty switch tree. The request still completes. With the `k8s` engine, nodes that still have accelerator domains can lose their existing fabric labels. Nodes absent from both discovery results keep their existing labels.
 
 For NVIDIA Spectrum-X Ethernet fabrics, use the [NetQ provider](../providers/netq.md). Topograph does not currently discover other on-premises Ethernet fabrics.
 
